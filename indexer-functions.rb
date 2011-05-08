@@ -482,20 +482,27 @@ def parseFilename(name, creditStrings, params)
 			showPath = showPath.split(":").map{|word| word.strip}
 		
 		
-			title = ""
+			eptitle = ""
 			#build the episode title, unless we're stripping it out
 			unless params.no_title # or title_swap
 		
 				endind += 1	
-				title = removeCredits(parts, endind, creditStrings, params.debug)
+				eptitle = removeCredits(parts, endind, creditStrings, params.debug)
 
-				title = title.strip.titlecase
-				puts "Final Show Name: " + title if params.debug				
+				eptitle = eptitle.strip.titlecase
+				
+				if eptitle == ""
+					episodes = getEpisodeTitles(showname)
+					eptitle = episodes[[season.to_i, ep[0].to_i]]
+				end
+				
+				
+				puts "Final Episode Name: " + eptitle if params.debug				
 			end
 			
 			puts "File Extension: " + file_ext if params.debug
 			
-			newdir, newname = makeNewNames(params.source, params.target, params.no_move, showname, showPath, title, season, ep, file_ext)
+			newdir, newname = makeNewNames(params.source, params.target, params.no_move, showname, showPath, eptitle, season, ep, file_ext)
 			
 			return true, newdir, newname, showname, season, ep
 			
@@ -638,4 +645,37 @@ end
 
 def configfile(file)
 	File.dirname(__FILE__) + "/" + file
+end
+
+
+def geturl(url)
+	`wget -U "Mozilla/5.0 (Windows; U; Windows NT5.1; en-US; rv:1.7) Gecko/20040613 Firefox/0.8.0+" -O - "#{url}"`
+end
+
+show = ARGV[0]
+
+def getEpisodeTitles(show)
+
+	epguidepage = geturl("http://www.google.com/search?q=site:epguides.com #{show}&btnI")
+	csvurl = epguidepage[/http:\/\/epguides.com\/common\/exportToCSV.asp\?rage=[0-9]*/]
+	csvpage = geturl(csvurl)
+
+	csv = csvpage.strip.split("\n")[7..-4].map{|line| line.strip }
+
+	episodelist = csv.map{|line| 
+
+		parts = line.split ",", 6
+		season = parts[1].to_i
+		ep = parts[2].to_i
+		title = parts[5].reverse.split(",", 2)[1].reverse[1..-2]
+		
+		[[season, ep], title]
+
+	}
+	
+	episodes = {}
+	episodelist.each{|ep| episodes[ep[0]] = ep[1]}
+
+	return episodes	
+	
 end

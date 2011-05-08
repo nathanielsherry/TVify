@@ -27,5 +27,5 @@ end
 
 require File.dirname(__FILE__)+'/indexer-functions.rb'
 
-`#{File.dirname(__FILE__) + "/"}indexer.rb --target-folder="./" --rename-only --file="#{ARGV[0]}"`
+puts `#{File.dirname(__FILE__) + "/"}indexer.rb --target-folder="./" --rename-only --file="#{ARGV[0]}"`
 
