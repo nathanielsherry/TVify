@@ -627,7 +627,7 @@ def getEpisodeTitles(show)
 
 
 	cvsurl = resolveEpguideURL(show)
-	return nil if cvsurl = nil
+	return nil if cvsurl == nil
 	
 	csvpage = geturl(cvsurl)
 		
