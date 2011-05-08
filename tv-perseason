@@ -1,0 +1,36 @@
+#!/usr/bin/ruby1.9
+
+#	 Copyright 2010 by Nathaniel Sherry
+#
+#    This file is part of TVify.
+#
+#    TVify is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    TVify is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with TVify.  If not, see <http://www.gnu.org/licenses/>.
+
+
+#	In a directory structure .../TV/ShowName/Season N/
+#	when run in the 'ShowName' directory, this command
+#	accepts a command as an argument and ezxecutes it
+#	in each of the 'Season N' folders. For example
+#	 tv-perseason tv-rename "Different Show Name"
+
+if ARGV[0] == "?" 
+
+	puts "Iterates over all subfolders/seasons of the TV show in the current folder, and applies the command(s) given in the remaining arguments"
+	exit 0
+	
+end
+
+#get all Season NN* folders
+dirs = `ls -d Season?[0-9]*/`.strip.split("\n")
+dirs.each{|dir| `bash -c 'cd "#{dir}";#{ARGV.join(" ")}'`}

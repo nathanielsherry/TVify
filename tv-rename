@@ -1,0 +1,29 @@
+#!/usr/bin/ruby1.9
+
+#	 Copyright 2010 by Nathaniel Sherry
+#
+#    This file is part of TVify.
+#
+#    TVify is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    TVify is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with TVify.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+if ARGV[0] == "?" 
+
+	puts "Replaces the show name of all video files in the current folder with the given name"
+	exit 0
+	
+end
+
+puts `indexer.rb --target-folder="./" --rename-only --replace-name="#{ARGV.join(" ")}"`
