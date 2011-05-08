@@ -24,12 +24,13 @@ require File.dirname(__FILE__)+'/indexer-functions.rb'
 def doIndexing params
 
 	
-	fileExtensions = loadStringList("indexer-exts").map{|ext| ext.downcase}
-	creditStrings = (fileExtensions + loadStringList("indexer-credits"))#.map{|credit| credit.upcase}
+	fileExtensions = loadFileExtensions
+	creditStrings = loadCreditStrings
+	showSegments = loadSegments
 	
 	if params.targetfile == nil
 		#get a list of all files that match our file extensions
-		list = findFilesWithExtensions(params.source, fileExtensions)
+		list = findFilesWithExtensions(params.source)
 	else
 		list = [params.targetfile]
 	end
@@ -146,7 +147,7 @@ def doIndexing params
 	
 	#completion notification
 	if reallymove and not params.no_move
-		`notify-send --icon=video "Indexing Complete" "#{successcount} Succeeded, #{failcount} Failed"\n\n#{shownames.uniq}`
+		`notify-send --icon=video "Indexing Complete" "#{successcount} Succeeded, #{failcount} Failed\n\n#{shownames.uniq.inject(){|str, item| str + "\n" + item}}"`	
 	elsif reallyhash
 		`notify-send --icon=gtk-execute "Hash Complete"`
 	elsif successcount == 0 and failcount > 0

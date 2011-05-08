@@ -332,10 +332,17 @@ def makeNewNames(source, target, no_move, showname, showPath, title, season, ep,
 	#ep: episodes string array
 	#file_ext: file extension string
 	
+	puts "====="
+	puts showname
 	
 	if showname != nil and showPath != nil and title != nil and ep != nil and season != nil
 	
-		newdir = target + "/#{showPath.join("/")}/Season #{season.to_i}/"
+		
+	
+		path = showPath.join("/")
+		path += "/" + loadSegments[showname] if hasSegment?(showname)
+	
+		newdir = target + "/#{path}/Season #{season.to_i}/"
 		newdir = source if no_move
 	
 		newname = "#{newdir}#{showname} - #{season.to_i}x" +  ep.join("-")
@@ -364,7 +371,7 @@ def loadStringList(filename)
 end
 
 
-def findFilesWithExtensions(dir, exts)
+def findFilesWithExtensions(dir, exts=loadFileExtensions)
 	exts.map{|ext| `ls "#{dir}" | grep -i .#{ext}$`.split("\n")}.inject(:+)
 end
 
@@ -514,6 +521,61 @@ end
 
 
 
+
+
+
+def loadFileExtensions()
+
+	return loadStringList("indexer-exts").map{|ext| ext.downcase}
+
+end
+
+
+def loadCreditStrings()
+
+	return (loadFileExtensions + loadStringList("indexer-credits"))#.map{|credit| credit.upcase}
+
+end
+
+
+def loadSegments()
+
+	strings = loadStringList("show-segments")
+	segments = {}
+	
+	while (strings.length >= 2)
+		show = strings.shift
+		segment = strings.shift
+		segments[show] = segment
+	end
+	
+	return segments
+
+end
+
+
+def setShowSegment(show, segment)
+
+	segments = loadSegments
+	segments[show] = segment
+
+	File.open("show-segments", "w"){|fh|
+	
+		segments.each{|k, v|
+			fh.puts k
+			fh.puts v
+		}
+	
+	}
+
+end
+
+
+def hasSegment?(show)
+
+	loadSegments.include? show
+
+end
 
 
 
