@@ -494,6 +494,7 @@ def parseFilename(name, creditStrings, params)
 				if eptitle == ""
 					episodes = getEpisodeTitles(showname)
 					eptitle = episodes[[season.to_i, ep[0].to_i]]
+					if eptitle == nil eptitle = ""
 				end
 				
 				
