@@ -221,7 +221,7 @@ puts "\nRunning in: #{params.source}"
 #only do the work once we have the lockfile
 File.open(configfile("lockfile"), "w"){|f|
 
-	fh.flock(File::LOCK_EX)
+	f.flock(File::LOCK_EX)
 	doIndexing(params)
 	
 }
