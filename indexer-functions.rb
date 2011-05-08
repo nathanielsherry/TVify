@@ -615,7 +615,8 @@ def resolveEpguideURL(show)
 	
 	epguidepage = geturl("http://www.google.com/search?q=site:epguides.com #{show}&btnI")
 	url = epguidepage[/http:\/\/epguides.com\/common\/exportToCSV.asp\?rage=[0-9]*/]
-	setEpguideURL(show, url)
+	
+	setEpguideURL(show, url) if url != nil
 	return url
 
 end
