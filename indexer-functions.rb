@@ -364,19 +364,8 @@ def makeNewNames(source, target, no_move, showname, showPath, title, season, ep,
 end
 
 
-def loadStringList(filename)
-
-	`more "#{filename}"`.strip.split("\n")
-
-end
-
-
 def findFilesWithExtensions(dir, exts=loadFileExtensions)
 	exts.map{|ext| `ls "#{dir}" | grep -i .#{ext}$`.split("\n")}.inject(:+)
-end
-
-def addStringToList(filename, string)
-	`echo "#{string}" >> #{File.dirname(__FILE__) + "/" + filename}`
 end
 
 
@@ -396,6 +385,7 @@ def defaultTarget()
 	
 end
 
+
 def parseFilenameMovie(name, creditStrings, params)
 
 	puts "\n\n\nExamining as Movie:" + name if params.debug
@@ -413,6 +403,7 @@ def parseFilenameMovie(name, creditStrings, params)
 	
 	
 end
+
 
 def parseFilename(name, creditStrings, params)
 
@@ -527,6 +518,10 @@ end
 
 
 
+####################################################
+# Read/Write config files to/from data scructures
+####################################################
+
 def loadFileExtensions()
 
 	return loadStringList(configfile("indexer-exts")).map{|ext| ext.downcase}
@@ -547,34 +542,6 @@ def loadSegments
 
 end
 
-def loadMap(file)
-
-	strings = loadStringList(file)
-	segments = {}
-	
-	while (strings.length >= 2)
-		show = strings.shift
-		segment = strings.shift
-		segments[show] = segment
-	end
-	
-	return segments
-
-end
-
-
-def writeMap(file, map)
-
-	File.open(file, "w"){|fh|
-	
-		map.each{|k, v|
-			fh.puts k
-			fh.puts v
-		}
-	
-	}
-
-end
 
 def setShowSegment(show, segment)
 
@@ -596,6 +563,7 @@ end
 def getRenameMap()
 	loadMap(configfile("show-rename"))
 end
+
 
 def showRename(show)
 
@@ -621,6 +589,52 @@ def hasRename?(show)
 end
 
 
+
+
+
+
+
+##############################################
+# Utilities
+##############################################
+
+def loadStringList(filename)
+
+	`cat "#{filename}"`.strip.split("\n")
+
+end
+
+def addStringToList(filename, string)
+	`echo "#{string}" >> #{File.dirname(__FILE__) + "/" + filename}`
+end
+
+def loadMap(file)
+
+	strings = loadStringList(file)
+	segments = {}
+	
+	while (strings.length >= 2)
+		show = strings.shift
+		segment = strings.shift
+		segments[show] = segment
+	end
+	
+	return segments
+
+end
+
+def writeMap(file, map)
+
+	File.open(file, "w"){|fh|
+	
+		map.each{|k, v|
+			fh.puts k
+			fh.puts v
+		}
+	
+	}
+
+end
 
 def configfile(file)
 	File.dirname(__FILE__) + "/" + file
