@@ -640,7 +640,7 @@ def getEpisodeTitles(show)
 		ep = parts[2].to_i
 		title = parts[5].reverse.split(",", 2)[1].reverse[1..-2]
 		
-		[[season, ep], title]
+		[[season, ep], title.replace("/", "\\")]
 
 	}
 	
