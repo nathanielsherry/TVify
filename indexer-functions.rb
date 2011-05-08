@@ -700,8 +700,5 @@ end
 
 
 def geturl(url)
-	`wget -U "Mozilla/5.0 (Windows; U; Windows NT5.1; en-US; rv:1.7) Gecko/20040613 Firefox/0.8.0+" -O - "#{url}"`
+	`wget -U "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.A.B.C Safari/525.13" -O - "#{url}"`
 end
-
-
-
