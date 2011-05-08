@@ -597,6 +597,55 @@ def hasRename?(show)
 	getRenameMap.include? show
 end
 
+def getEpguideURL(show)
+	loadMap(configfile("show-epguideurl"))[show]
+end
+
+def setEpguideURL(show, url)
+	map = loadMap(configfile("show-epguideurl"))
+	map[show] = url
+	writeMap(configfile("show-epguideurl"), map)
+end
+
+
+def resolveEpguideURL(show)
+
+	url = getEpguideURL(show)
+	return url if url != nil
+	
+	epguidepage = geturl("http://www.google.com/search?q=site:epguides.com #{show}&btnI")
+	url = epguidepage[/http:\/\/epguides.com\/common\/exportToCSV.asp\?rage=[0-9]*/]
+	setEpguideURL(show, url)
+	return url
+
+end
+
+def getEpisodeTitles(show)
+
+
+	csvpage = geturl(getEpGuideCSVPage(show))
+
+	csv = csvpage.strip.split("\n")[7..-4].map{|line| line.strip }
+
+	episodelist = csv.map{|line| 
+
+		parts = line.split ",", 6
+		season = parts[1].to_i
+		ep = parts[2].to_i
+		title = parts[5].reverse.split(",", 2)[1].reverse[1..-2]
+		
+		[[season, ep], title]
+
+	}
+	
+	episodes = {}
+	episodelist.each{|ep| episodes[ep[0]] = ep[1]}
+
+	return episodes	
+	
+end
+
+
 
 
 
@@ -654,30 +703,5 @@ def geturl(url)
 	`wget -U "Mozilla/5.0 (Windows; U; Windows NT5.1; en-US; rv:1.7) Gecko/20040613 Firefox/0.8.0+" -O - "#{url}"`
 end
 
-show = ARGV[0]
 
-def getEpisodeTitles(show)
 
-	epguidepage = geturl("http://www.google.com/search?q=site:epguides.com #{show}&btnI")
-	csvurl = epguidepage[/http:\/\/epguides.com\/common\/exportToCSV.asp\?rage=[0-9]*/]
-	csvpage = geturl(csvurl)
-
-	csv = csvpage.strip.split("\n")[7..-4].map{|line| line.strip }
-
-	episodelist = csv.map{|line| 
-
-		parts = line.split ",", 6
-		season = parts[1].to_i
-		ep = parts[2].to_i
-		title = parts[5].reverse.split(",", 2)[1].reverse[1..-2]
-		
-		[[season, ep], title]
-
-	}
-	
-	episodes = {}
-	episodelist.each{|ep| episodes[ep[0]] = ep[1]}
-
-	return episodes	
-	
-end
