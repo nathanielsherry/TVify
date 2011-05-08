@@ -462,12 +462,15 @@ def parseFilename(name, creditStrings, params)
 		end
 		showname = showname.strip.titlecase
 		
+		
 		puts "\nDetected Showname: " + showname if params.debug
 		print "Episode Number Data: " if params.debug
 		print season, "x", ep if params.debug
 
+		
 		showname = (params.prepend_showname||"") + showname + (params.append_showname||"")
 		showname = params.replace_showname if params.replace_showname != nil
+		showname = showRename(showname)
 
 		puts "\nFinal Showname: " + showname if params.debug
 		puts "\n" if params.debug
@@ -538,9 +541,15 @@ def loadCreditStrings()
 end
 
 
-def loadSegments()
+def loadSegments
 
-	strings = loadStringList("show-segments")
+	loadMap("show-segments")
+
+end
+
+def loadMap(file)
+
+	strings = loadStringList(file)
 	segments = {}
 	
 	while (strings.length >= 2)
@@ -578,6 +587,15 @@ def hasSegment?(show)
 end
 
 
+def showRename(show)
+
+	rename = loadMap("show-rename")
+	
+	return rename[show] if rename.include? show
+	return show
+	
+
+end
 
 
 
