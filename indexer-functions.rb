@@ -623,7 +623,7 @@ end
 def getEpisodeTitles(show)
 
 
-	csvpage = geturl(getEpGuideCSVPage(show))
+	csvpage = geturl(resolveEpguideURL(show))
 
 	csv = csvpage.strip.split("\n")[7..-4].map{|line| line.strip }
 
