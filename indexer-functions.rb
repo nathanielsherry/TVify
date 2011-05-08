@@ -664,7 +664,13 @@ end
 
 def loadStringList(filename)
 
-	`cat "#{filename}"`.strip.split("\n")
+	list = []
+
+	File.open(filename, "r"){|f|
+		f.flock(File::LOCK_EX)
+		f.each_line{|l| list << l.strip}
+	}
+	return list
 
 end
 
@@ -690,7 +696,7 @@ end
 def writeMap(file, map)
 
 	File.open(file, "w"){|fh|
-	
+		fh.flock(File::LOCK_EX)
 		map.each{|k, v|
 			fh.puts k
 			fh.puts v
