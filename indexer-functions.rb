@@ -118,7 +118,7 @@ end
 
 class Params
 
-	attr_accessor :debug, :simulate, :no_move, :no_title, :prepend_showname, :append_showname, :replace_showname, :source, :target, :hashonly, :targetfile
+	attr_accessor :debug, :simulate, :no_move, :no_title, :lookup_replace_showname, :prepend_showname, :append_showname, :replace_showname, :source, :target, :hashonly, :targetfile
 
 	def initialize
 	
@@ -126,6 +126,7 @@ class Params
 		@simulate=false
 		@no_move=false
 		@no_title=false
+		@lookup_replace_showname=false
 		@prepend_showname=nil
 		@append_showname=nil
 		@replace_showname=nil

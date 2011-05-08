@@ -202,6 +202,7 @@ params.simulate = args.include? "--simulate"
 params.hashonly = args.include? "--hash-only"
 params.no_move = args.include? "--rename-only"
 params.no_title = args.include? "--strip-title"
+params.lookup_replace_showname = args.include? "--lookup-replace-name"
 params.prepend_showname = getArgValue(argParts, "--prepend-name")
 params.append_showname = getArgValue(argParts, "--append-name")
 params.replace_showname = getArgValue(argParts, "--replace-name")
