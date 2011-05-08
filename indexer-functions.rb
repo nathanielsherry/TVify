@@ -563,19 +563,25 @@ def loadMap(file)
 end
 
 
-def setShowSegment(show, segment)
+def writeMap(file, map)
 
-	segments = loadSegments
-	segments[show] = segment
-
-	File.open("show-segments", "w"){|fh|
+	File.open(file, "w"){|fh|
 	
-		segments.each{|k, v|
+		map.each{|k, v|
 			fh.puts k
 			fh.puts v
 		}
 	
 	}
+
+end
+
+def setShowSegment(show, segment)
+
+	segments = loadSegments
+	segments[show] = segment
+
+	writeMap("show-segments", segments)
 
 end
 
@@ -587,16 +593,32 @@ def hasSegment?(show)
 end
 
 
+def getRenameMap()
+	loadMap("show-rename")
+end
+
 def showRename(show)
 
-	rename = loadMap("show-rename")
+	rename = getRenameMap
 	
-	return rename[show] if rename.include? show
+	return rename[show] if hasRename? show
 	return show
 	
 
 end
 
+
+def addRename(show, newshow)
+
+	map = getRenameMap
+	map[show] = newshow
+	writeMap("show-rename", map)
+
+end
+
+def hasRename?(show)
+	getRenameMap.include? show
+end
 
 
 
