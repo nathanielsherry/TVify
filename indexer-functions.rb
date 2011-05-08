@@ -366,7 +366,7 @@ end
 
 def loadStringList(filename)
 
-	`more "#{File.dirname(__FILE__) + "/" + filename}"`.strip.split("\n")
+	`more "#{filename}"`.strip.split("\n")
 
 end
 
@@ -529,21 +529,21 @@ end
 
 def loadFileExtensions()
 
-	return loadStringList("indexer-exts").map{|ext| ext.downcase}
+	return loadStringList(configfile("indexer-exts")).map{|ext| ext.downcase}
 
 end
 
 
 def loadCreditStrings()
 
-	return (loadFileExtensions + loadStringList("indexer-credits"))#.map{|credit| credit.upcase}
+	return (loadFileExtensions + loadStringList(configfile("indexer-credits")))#.map{|credit| credit.upcase}
 
 end
 
 
 def loadSegments
 
-	loadMap("show-segments")
+	loadMap(configfile("show-segments"))
 
 end
 
@@ -581,7 +581,7 @@ def setShowSegment(show, segment)
 	segments = loadSegments
 	segments[show] = segment
 
-	writeMap("show-segments", segments)
+	writeMap(configfile("show-segments"), segments)
 
 end
 
@@ -594,7 +594,7 @@ end
 
 
 def getRenameMap()
-	loadMap("show-rename")
+	loadMap(configfile("show-rename"))
 end
 
 def showRename(show)
@@ -612,7 +612,7 @@ def addRename(show, newshow)
 
 	map = getRenameMap
 	map[show] = newshow
-	writeMap("show-rename", map)
+	writeMap(configfile("show-rename"), map)
 
 end
 
@@ -622,3 +622,6 @@ end
 
 
 
+def configfile(file)
+	File.dirname(__FILE__) + "/" + file
+end
