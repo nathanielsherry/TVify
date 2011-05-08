@@ -494,8 +494,10 @@ def parseFilename(name, creditStrings, params)
 				
 				if eptitle == ""
 					episodes = getEpisodeTitles(showname)
-					eptitle = episodes[[season.to_i, ep[0].to_i]]
-					eptitle = "" if eptitle == nil 
+					if episodes != nil
+						eptitle = episodes[[season.to_i, ep[0].to_i]]
+						eptitle = "" if eptitle == nil 
+					end
 				end
 				
 				
@@ -624,8 +626,11 @@ end
 def getEpisodeTitles(show)
 
 
-	csvpage = geturl(resolveEpguideURL(show))
-
+	cvsurl = resolveEpguideURL(show)
+	return nil if cvsurl = nil
+	
+	csvpage = geturl(cvsurl)
+		
 	csv = csvpage.strip.split("\n")[7..-4].map{|line| line.strip }
 
 	episodelist = csv.map{|line| 
