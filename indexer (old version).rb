@@ -1,4 +1,4 @@
-#!/usr/bin/ruby1.9
+#!/usr/bin/ruby
 
 require File.dirname(__FILE__)+'/indexer-functions.rb'
 

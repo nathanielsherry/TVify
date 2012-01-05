@@ -1,4 +1,4 @@
-#!/usr/bin/ruby1.9.1
+#!/usr/bin/ruby
 
 #	 Copyright 2010 by Nathaniel Sherry
 #
@@ -18,7 +18,7 @@
 #    along with TVify.  If not, see <http://www.gnu.org/licenses/>.
 
 
-require './indexer-functions.rb'
+require File.dirname(__FILE__)+'/indexer-functions.rb'
 
 
 def doIndexing params

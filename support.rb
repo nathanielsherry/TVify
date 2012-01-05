@@ -1,4 +1,4 @@
-#!/usr/bin/ruby1.9.1
+#!/usr/bin/ruby
 
 #	 Copyright 2010 by Nathaniel Sherry
 #

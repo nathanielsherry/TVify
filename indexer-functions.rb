@@ -1,4 +1,4 @@
-#!/usr/bin/ruby1.9.1
+#!/usr/bin/ruby
 
 #	 Copyright 2010 by Nathaniel Sherry
 #
@@ -18,7 +18,7 @@
 #    along with TVify.  If not, see <http://www.gnu.org/licenses/>.
 
 
-require './support'
+require File.dirname(__FILE__)+'/support.rb'
 
 def getTVFileInformation(filename, credits, debug)
 
@@ -37,23 +37,29 @@ def getTVFileInformation(filename, credits, debug)
 		
 		"[Ss]([0-9]{1,2})[Ee]([0-9]{1,2})",								#eg S01E01
 		"([0-9]{1,2})[xX]([0-9]{1,2})",									#eg 1x01
-		"[([0-9]{1,2})[xX]([0-9][0-9])]",								#eg [1x01]
+		"\\[([0-9]{1,2})[xX]([0-9][0-9])\\]",								#eg [1x01]
 		"(0[0-9])([0-9][0-9])",											#eg 0101 - clashes with years - eg Doctor Who 2005, so only works with seasons starting in 0
 		"([0-9])([0-9][0-9])",											#101
-		"([0-9]{1,2})\.([0-9]{1,2})"									#01.01
+		"([0-9]{1,2})\\.([0-9]{1,2})",									#01.01
+		"Season ([0-9]{1,2}),*[ ]+Episode ([0-9]{1,2})",				#Season 1, Episode 1
 	]
 	
 	
+	p filename
 	
 	patterns.each{|pattern|
 	
 		epcodeRegex = Regexp.new pattern
-		showRegex = Regexp.new "(.*?)[ -\.]*(#{pattern.gsub("(", "").gsub(")", "")})[ -\.]*(.*)"
+		showRegex = Regexp.new "(.*?)[ -\\.]*(#{pattern.gsub("(", "").gsub(")", "")})[ -\\.]*(.*)"
 		
+
+		p showRegex
+
 		#showname, title
 		showParts = showRegex.match(filename).to_a
 		next if showParts == []
-		
+		p showParts
+
 		showParts.shift
 		show = cleanName showParts.shift
 		epcode = showParts.shift
@@ -67,6 +73,15 @@ def getTVFileInformation(filename, credits, debug)
 		epParts.shift
 		season = epParts.shift
 		ep = epParts
+
+		ep.map!{|epnum| 
+			if epnum.length == 1 then
+				epnum = "0" + epnum
+			end
+			epnum
+		}
+
+		
 		
 		return show, season, ep, title, fileext
 	
@@ -135,11 +150,11 @@ end
 def removeFileExt(name)
 
 	parts = name.split "."
-	return parts[1..-2].join("."), parts[-1]
+	return parts[0..-2].join("."), parts[-1]
 
 end
 
-=begin
+
 def splitTitleToParts(name, epNameParse=false)
 
 	if (epNameParse)
@@ -152,7 +167,7 @@ def splitTitleToParts(name, epNameParse=false)
 	return parts
 
 end
-=end
+
 
 
 def makeNewNames(source, target, no_move, showname, showPath, title, season, ep, file_ext)
@@ -224,10 +239,9 @@ def parseFilenameMovie(name, creditStrings, params)
 
 	puts "\n\n\nExamining as Movie:" + name if params.debug
 	
-	file_ext = splitTitleToParts(name, true).last.strip
+	name, file_ext = removeFileExtension name
 	
-	parts = splitTitleToParts(name)
-	title = removeCredits(parts, 0, creditStrings, params.debug)
+	title = removeCredits(name, creditStrings, params.debug)
 	
 	p title
 	
@@ -241,9 +255,9 @@ end
 
 def parseFilename(name, creditStrings, params)
 
-=begin
-		puts "\n\n\nExamining " + name if params.debug
 
+		puts "\n\n\nExamining " + name
+=begin
 		season = 0
 		ep = []
 		endind = -1
@@ -289,8 +303,8 @@ def parseFilename(name, creditStrings, params)
 		showname = showname.strip.titlecase
 =end
 	
-		showname, season, ep, title = getTVFileInformation name
-
+		showname, season, ep, eptitle, file_ext = getTVFileInformation name, creditStrings, params.debug
+		return false if showname == nil
 		
 		puts "\nDetected Showname: " + showname if params.debug
 		print "Episode Number Data: " if params.debug
@@ -320,22 +334,16 @@ def parseFilename(name, creditStrings, params)
 			showPath = showPath.split(":").map{|word| word.strip}
 		
 		
-			eptitle = ""
 			#build the episode title, unless we're stripping it out
 			unless params.no_title # or title_swap
 		
-				endind += 1	
-				eptitle = removeCredits(parts, endind, creditStrings, params.debug)
 
-				eptitle = eptitle.strip.titlecase
-				
-				if eptitle == ""
+
 					episodes = getEpisodeTitles(showname)
 					if episodes != nil
-						eptitle = episodes[[season.to_i, ep[0].to_i]]
-						eptitle = "" if eptitle == nil 
+						neweptitle = episodes[[season.to_i, ep[0].to_i]]
+						eptitle = neweptitle if neweptitle != nil 
 					end
-				end
 				
 				
 				puts "Final Episode Name: " + eptitle if params.debug				
@@ -472,10 +480,12 @@ def getEpisodeTitles(show)
 
 	episodelist = csv.map{|line| 
 
-		parts = line.split ",", 6
+
+		parts = line.split ",", 7
+
 		season = parts[1].to_i
 		ep = parts[2].to_i
-		title = parts[5].reverse.split(",", 2)[1].reverse[1..-2]
+		title = parts[5][1..-2]#.reverse.split(",", 2)[1].reverse[1..-2]
 		
 		[[season, ep], title.gsub("/", "\\")]
 
@@ -549,5 +559,6 @@ end
 
 
 def geturl(url)
-	`wget -U "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.A.B.C Safari/525.13" -O - "#{url}"`
+	page = `wget -U "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.A.B.C Safari/525.13" -O - "#{url}"`
+	return page.encode("US-ASCII", :invalid => :replace, :undef => :replace, :replace => "")
 end
