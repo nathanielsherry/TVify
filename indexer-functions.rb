@@ -18,271 +18,90 @@
 #    along with TVify.  If not, see <http://www.gnu.org/licenses/>.
 
 
-require 'fileutils'
+require './support'
 
-class TitleCase
- 
-  def initialize(string)
-    @raw_string = string
-    convert
-  end
- 
-  def to_s
-    @titlecase_string
-  end
-  
-  def original
-    @raw_string
-  end
-  
-  def self.small_words
-    @small_words = %w(a an and as at but by en for if in of on or the to v[.] via vs[.]?)
-  end
- 
-  def self.small_words=(words)
-    @small_words = words
-  end
-  
-  def self.small_words_re
-    small_words.join('|')
-  end
-  
-  private
-  
-    def convert
-      @titlecase_string = ""
-      @raw_string.each_line do |line|
-        line.split(/( [:.;?!][ ] | (?:[ ]|^)[""] )/ux).each do |sub_phrase|
-          
-          # upper case phrase words
-          sub_phrase = uppercase_phrase(sub_phrase)
- 
-          # lower case small words
-          sub_phrase.gsub!(/\b(#{TitleCase.small_words_re})\b/ui){|small| small.downcase }
- 
-          # upper case small words at start of phrase
-          sub_phrase.gsub!(/\A[[:punct:]]*(#{TitleCase.small_words_re})\b/u){|small| small.capitalize }
- 
-          # upper case small words at end of phrase
-          sub_phrase.gsub!(/\b(#{TitleCase.small_words_re})[[:punct:]]*\Z/u){|small| small.capitalize }
- 
-          sub_phrase = special_cases(sub_phrase)
-          @titlecase_string << sub_phrase
-        end
-      end
-    end
-    
-    def uppercase_phrase(phrase)
-      phrase.gsub!(/\b([[:alpha:]][[:lower:].'']*)\b/u) do |word|
-        if /[[:alpha:]][.][[:alpha:]]/u.match(word)
-          word
-        else
-          word.downcase.capitalize
-        end
-      end
-      phrase
-    end
-    
-    def special_cases(phrase)
-      phrase.gsub!(/\b(v[s\.])\b/ui){ |vs| vs.downcase }
-      phrase.gsub!(/(['']S)\b/u) { |aps| aps.downcase }
-      phrase.gsub!(/\b(Q&A)\b/ui){|special| special.upcase }
-      phrase
-    end
-  
-end
- 
-class String
- 
-  def titlecase
-    TitleCase.new(self).to_s
-  end
- 
-  def TheToEnd
-  
-	return self if self.size == 0
+def getTVFileInformation(filename, credits, debug)
 
-	words = self.split(" ")
-	if words[0].downcase.strip == "the"
-		the = words.shift
-		words[-1] += ","
-		words << the
-		return words.join(" ")
-	end
-	return self
-  
-  end
- 
-end
+	filename, fileext = removeFileExt(filename)
 
-
-class Params
-
-	attr_accessor :debug, :simulate, :no_move, :no_title, :lookup_replace_showname, :prepend_showname, :append_showname, :replace_showname, :source, :target, :hashonly, :targetfile
-
-	def initialize
+	patterns = [
 	
-		@debug=false
-		@simulate=false
-		@no_move=false
-		@no_title=false
-		@lookup_replace_showname=false
-		@prepend_showname=nil
-		@append_showname=nil
-		@replace_showname=nil
-		@source="./"
-		@target="./"
-		@hashonly=false
-		@targetfile=nil
+		#***double episode matchings***
 	
-	end
-
-end
-
-def matchEpisodeNumber(part, index, debug)
-
-	ep = []
-
-	part.strip!
-
-	puts "Episode Number?: " + part if debug
-
-	#***multi-part episode matching comes first.***
-	#eg S01E01E02
-	match = part =~ /[Ss][0-9].?[Ee][0-9].?[Ee][0-9].?/
-	if match == 0
-		season = part[part.index(/[Ss]/) + 1, part.index(/[Ee]/)-1]
-		e_ind1 = part.index(/[Ee]/)
-		e_ind2 = part.index(/[Ee]/, e_ind1+1)
-		ep << part[e_ind1 + 1..e_ind2-1]
-		ep << part[e_ind2 + 1..-1]
-		#endind = index
-		return index, season, ep
-	end
-
-	#eg S01E0102
-	match = part =~ /[Ss][0-9].?[Ee][0-9][0-9][0-9][0-9]/
-	if match == 0
-		season = part[part.index(/[Ss]/) + 1, part.index(/[Ee]/)-1]
-		e_ind = part.index(/[Ee]/)
-		ep << part[part.index(/[Ee]/) + 1, 2]
-		ep << part[part.index(/[Ee]/) + 3, 2]
-		#endind = index
-		return index, season, ep
-	end
-	
-	#INTERNAL FORMAT
-	#eg 1x01-02
-	#alternate matches 01x01x02
-	match = part =~ /[0-9][0-9]?[xX][0-9][0-9]?[-x][0-9][0-9]?/
-	if match == 0
-		sep = part.downcase.split("x", 2)
+		"[Ss]([0-9]{1,2})[Ee]([0-9]{1,2})[Ee]([0-9]{1,2})",				#eg S01E01E02
+		"[Ss]([0-9]{1,2})[Ee]([0-9]{1,2})([0-9]{1,2})",					#eg S01E0102
+		"([0-9]{1,2})[xX]([0-9]{1,2})[-x]([0-9]{1,2})",					#eg 1x01-02
+		"([0-9]{1,2})[xX]([0-9][0-9])([0-9][0-9])",						#eg 1x0102
 		
-		season = sep[0]
-		ep << sep[1].split(/[-x]/)
-		endind = index
-		return index, season, ep
-	end
-
-	#eg 1x0102
-	match = part =~ /[0-9][0-9]?[xX][0-9][0-9][0-9][0-9]?/
-	if match == 0
-		sep = part.downcase.split "x"
+		#***single episode matchings***
 		
-		season = sep[0]
-		ep << sep[1][0,2]
-		ep << sep[1][2,2]
-		endind = index
-		return index, season, ep
-	end
-
-	#***single episode matchings***
-	#eg S01E01
-	match = part =~ /[Ss][0-9].?[Ee][0-9].?/
-	if match == 0
-		season = part[part.index(/[Ss]/) + 1, part.index(/[Ee]/)-1]
-		ep << part[part.index(/[Ee]/) + 1..-1]
-		endind = index
-		return index, season, ep
-	end
+		"[Ss]([0-9]{1,2})[Ee]([0-9]{1,2})",								#eg S01E01
+		"([0-9]{1,2})[xX]([0-9]{1,2})",									#eg 1x01
+		"[([0-9]{1,2})[xX]([0-9][0-9])]",								#eg [1x01]
+		"(0[0-9])([0-9][0-9])",											#eg 0101 - clashes with years - eg Doctor Who 2005, so only works with seasons starting in 0
+		"([0-9])([0-9][0-9])",											#101
+		"([0-9]{1,2})\.([0-9]{1,2})"									#01.01
+	]
 	
-	#INTERNAL FORMAT
-	#eg 1x01
-	match = part =~ /[0-9][0-9]?[xX][0-9].?/
-	if match == 0
-		sep = part.downcase.split "x"
+	
+	
+	patterns.each{|pattern|
+	
+		epcodeRegex = Regexp.new pattern
+		showRegex = Regexp.new "(.*?)[ -\.]*(#{pattern.gsub("(", "").gsub(")", "")})[ -\.]*(.*)"
 		
-		season = sep[0]
-		ep << sep[1]
-		endind = index
-		return index, season, ep
-	end
-
+		#showname, title
+		showParts = showRegex.match(filename).to_a
+		next if showParts == []
+		
+		showParts.shift
+		show = cleanName showParts.shift
+		epcode = showParts.shift
+		title = removeCredits( cleanName(showParts.shift), credits, debug)
+		
+		#episode code
+		ep = []
+		epParts = epcodeRegex.match(epcode).to_a
+		next if epParts == []
+		
+		epParts.shift
+		season = epParts.shift
+		ep = epParts
+		
+		return show, season, ep, title, fileext
 	
-
-	#clashes with year (eg Doctor Who 2005)
-	#so we refuse to match [1-9]### numbers
-	#this may interfere with shows that run for
-	#10+ seasons, but its better than not matching it
-	#at all
-	#eg 0101
-	match = part =~ /0[0-9][0-9][0-9]/
-	if match == 0 and part.strip.length == 4
-		#season = part[0,1] if part.length == 3
-		season = part[0..1]
-		ep << part[-2..-1]
-		endind = index
-		return index, season, ep
-	end
-
-
-#=begin
-	#eg 101
-	match = part =~ /[0-9][0-9][0-9]/
-	if match == 0 and part.strip.length == 3
-		season = part[0,1] if part.length == 3
-		#season = part[0..1] if part.length == 4
-		ep << part[-2..-1]
-		endind = index
-		return index, season, ep
-	end
+	}
 	
-#=end	
-	
-	#eg [1x01]
-	#todo: cant this merge with the one avobe using '\[?' ?
-	#parsing would get more complicated, but...
-	match = part =~ /\[[0-9][0-9]?[xX][0-9][0-9]\]?/
-	if match == 0
-		sep = part[1..-2].downcase.split "x"
-		season = sep[0]
-		ep << sep[1]
-		endind = index
-		return index, season, ep
-	end
-	
-	
-	#eg 1.01
-	match = part =~ /[0-9]\.[0-9][0-9]/
-	if match == 0 and part.strip.length == 4
-		#season = part[0,1] if part.length == 3
-		season = part[0..1]
-		ep << part[-2..-1]
-		endind = index
-		return index, season, ep
-	end
-	
-	
-	return nil, 0, []
+	return nil, nil, nil, nil, nil
 
 end
+
+
 
 #takes a list of title parts, a start index, and a list of credit strings
 #looks through list until it finds
-def removeCredits(parts, ind, credits, debug)
+def removeCredits(title, credits, debug)
 
+	parts = title.split " "
 	title = ""
 
+	parts.each{|part|
+	
+		part = part.chomp.strip
+	
+		ended = false	
+		ended = credits.map{|credit| part[0..credit.size-1] == credit}.inject(false){|a,b| a or b}
+		
+		puts "Found Title Fragment: #{part}" if (not ended) and debug
+		puts "Title Ended Search on: #{part}" if ended and debug
+		return title if ended
+	
+		title += " " if title != ""
+		title += part
+	
+	}
+	
+=begin
 	while true
 		
 		return title if ind >= parts.size
@@ -300,13 +119,27 @@ def removeCredits(parts, ind, credits, debug)
 		title += parts[ind].strip
 		ind += 1
 	end
-
+=end
 	return title
 
 end
 
 
+def cleanName(name)
 
+	parts = name.split(/[ ._]/)	
+	return parts.join(" ").strip.titlecase
+
+end
+
+def removeFileExt(name)
+
+	parts = name.split "."
+	return parts[1..-2].join("."), parts[-1]
+
+end
+
+=begin
 def splitTitleToParts(name, epNameParse=false)
 
 	if (epNameParse)
@@ -319,7 +152,7 @@ def splitTitleToParts(name, epNameParse=false)
 	return parts
 
 end
-
+=end
 
 
 def makeNewNames(source, target, no_move, showname, showPath, title, season, ep, file_ext)
@@ -408,6 +241,7 @@ end
 
 def parseFilename(name, creditStrings, params)
 
+=begin
 		puts "\n\n\nExamining " + name if params.debug
 
 		season = 0
@@ -453,7 +287,10 @@ def parseFilename(name, creditStrings, params)
 			#showname = removeCredits(parts, endind+1, creditStrings, params.debug)
 		end
 		showname = showname.strip.titlecase
-		
+=end
+	
+		showname, season, ep, title = getTVFileInformation name
+
 		
 		puts "\nDetected Showname: " + showname if params.debug
 		print "Episode Number Data: " if params.debug

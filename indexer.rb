@@ -18,7 +18,7 @@
 #    along with TVify.  If not, see <http://www.gnu.org/licenses/>.
 
 
-require File.dirname(__FILE__)+'/indexer-functions.rb'
+require './indexer-functions.rb'
 
 
 def doIndexing params
